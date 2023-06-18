@@ -31,8 +31,6 @@ def validate_test_id(namespace):
 
 def validate_test_run_id(namespace):
     """Validates test-run-id"""
-    if namespace.test_run_id is None:
-        namespace.test_run_id = utils.get_random_uuid()
     if not isinstance(namespace.test_run_id, str):
         raise InvalidArgumentValueError(
             f"Invalid test-run-id type: {type(namespace.test_run_id)}"
