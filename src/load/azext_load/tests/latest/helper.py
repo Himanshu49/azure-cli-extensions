@@ -66,6 +66,7 @@ def create_test_run(
     resource_group=None,
     test_id=None,
     test_run_id=None,
+    env=None,
 ):
     if not load_test_resource:
         load_test_resource = ScenarioTest.kwargs["load_test_resource"]
@@ -76,12 +77,21 @@ def create_test_run(
     if not test_run_id:
         test_run_id = ScenarioTest.kwargs["test_run_id"]
 
-    test_run = ScenarioTest.cmd(
+    template = (
         "az load test-run create "
         f"--load-test-resource {load_test_resource} "
         f"--resource-group {resource_group} "
         f"--test-id {test_id} "
-        f"--test-run-id {test_run_id} ",
+        f"--test-run-id {test_run_id} "
+    )
+
+    if isinstance(env, bool) and env:
+        env = ScenarioTest.kwargs["environment_variables"]
+    if isinstance(env, str):
+        template += f" --env {env}"
+
+    test_run = ScenarioTest.cmd(
+        template,
         checks=[JMESPathCheck("testRunId", ScenarioTest.kwargs["test_run_id"])],
     ).get_output_in_json()
 

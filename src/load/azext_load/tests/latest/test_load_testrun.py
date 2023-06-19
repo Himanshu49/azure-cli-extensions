@@ -47,22 +47,25 @@ sa_params = {
     "length": 20,
 }
 
+
 class LoadTestRunScenario(ScenarioTest):
     def __init__(self, *args, **kwargs):
         super(LoadTestRunScenario, self).__init__(*args, **kwargs)
         self.kwargs.update({"subscription_id": self.get_subscription_id()})
-    
+
     @ResourceGroupPreparer(**rg_params)
     @LoadTestResourcePreparer(**load_params)
     @StorageAccountPreparer(**sa_params)
     def test_load_test_run_valid(self, rg, load):
-        #GET STORAGE ACCOUNT ID
-        result= self.cmd("az storage account show --name {storage_account} --resource-group {resource_group}").get_output_in_json()
+        # GET STORAGE ACCOUNT ID
+        result = self.cmd(
+            "az storage account show --name {storage_account} --resource-group {resource_group}"
+        ).get_output_in_json()
         storage_account_id = result["id"]
         storage_account_name = result["name"]
         storage_account_type = result["type"]
         storage_account_kind = result["kind"]
-        #1. Create a short test 
+        # 1. Create a short test
         self.kwargs.update(
             {
                 "test_id": LoadTestRunConstants.VALID_TEST_ID,
@@ -73,7 +76,7 @@ class LoadTestRunScenario(ScenarioTest):
 
         create_test(self)
 
-        #2. Create a test run
+        # 2. Create a test run
         self.kwargs.update(
             {
                 "test_id": LoadTestRunConstants.VALID_TEST_ID,
@@ -84,10 +87,12 @@ class LoadTestRunScenario(ScenarioTest):
                 "display_name": LoadTestRunConstants.DISPLAY_NAME,
             }
         )
-        checks=[JMESPathCheck("testRunId", self.kwargs["test_run_id"]),
-                JMESPathCheck("description", self.kwargs["description"]),
-                JMESPathCheck("displayName", self.kwargs["display_name"]),
-                JMESPathCheck("environmentVariables.rps", '11')]
+        checks = [
+            JMESPathCheck("testRunId", self.kwargs["test_run_id"]),
+            JMESPathCheck("description", self.kwargs["description"]),
+            JMESPathCheck("displayName", self.kwargs["display_name"]),
+            JMESPathCheck("environmentVariables.rps", "11"),
+        ]
         self.cmd(
             "az load test-run create "
             "--load-test-resource {load_test_resource} "
@@ -97,10 +102,10 @@ class LoadTestRunScenario(ScenarioTest):
             "--env rps=11 "
             "--description {description} "
             "--display-name {display_name} ",
-            checks=checks
+            checks=checks,
         )
 
-        #3. Get the test run and confirm
+        # 3. Get the test run and confirm
         self.cmd(
             "az load test-run show "
             "--load-test-resource {load_test_resource} "
@@ -109,7 +114,7 @@ class LoadTestRunScenario(ScenarioTest):
             checks=[JMESPathCheck("testRunId", self.kwargs["test_run_id"])],
         ).get_output_in_json()
 
-        #4. Download result, logs and input for testrun
+        # 4. Download result, logs and input for testrun
         with tempfile.TemporaryDirectory(
             prefix="clitest-load-", suffix=create_random_name(prefix="", length=5)
         ) as temp_dir:
@@ -136,8 +141,8 @@ class LoadTestRunScenario(ScenarioTest):
             assert len(files_in_dir) >= 3
             assert all([ext in exts for ext in [".yaml", ".zip", ".jmx"]])
 
-            #download files in a new directory using force argument
-            temp_new_dir = temp_dir+r"/new"
+            # download files in a new directory using force argument
+            temp_new_dir = temp_dir + r"/new"
             self.kwargs.update({"path": temp_new_dir})
             self.cmd(
                 "az load test-run download-files "
@@ -161,7 +166,7 @@ class LoadTestRunScenario(ScenarioTest):
             assert len(files_in_dir) >= 3
             assert all([ext in exts for ext in [".yaml", ".zip", ".jmx"]])
 
-        #5. Update test run
+        # 5. Update test run
         self.kwargs.update({"new_description": "Updated test run description"})
         self.cmd(
             "az load test-run update "
@@ -172,7 +177,7 @@ class LoadTestRunScenario(ScenarioTest):
             checks=[JMESPathCheck("description", self.kwargs["new_description"])],
         ).get_output_in_json()
 
-        #6. Add AC & list AC
+        # 6. Add AC & list AC
         self.kwargs.update(
             {
                 "app_component_id": storage_account_id,
@@ -204,10 +209,12 @@ class LoadTestRunScenario(ScenarioTest):
         assert app_component is not None and self.kwargs[
             "app_component_id"
         ] == app_component.get("resourceId")
-        #7. Add SM & list SM
+        # 7. Add SM & list SM
         self.kwargs.update(
             {
-                "server_metric_id": LoadTestRunConstants.SERVER_METRIC_ID.format(storage_account_id),
+                "server_metric_id": LoadTestRunConstants.SERVER_METRIC_ID.format(
+                    storage_account_id
+                ),
                 "server_metric_name": LoadTestRunConstants.SERVER_METRIC_NAME,
                 "server_metric_namespace": LoadTestRunConstants.SERVER_METRIC_NAMESPACE,
                 "aggregation": LoadTestRunConstants.AGGREGATION,
@@ -237,11 +244,11 @@ class LoadTestRunScenario(ScenarioTest):
             self.kwargs["server_metric_id"]
         )
 
-        #8. Remove SM & list SM
+        # 8. Remove SM & list SM
         assert server_metric is not None
-        #assert self.kwargs[
+        # assert self.kwargs[
         #    "server_metric_id"
-        #] == server_metric.get("id")
+        # ] == server_metric.get("id")
 
         self.cmd(
             "az load test-run server-metric remove "
@@ -262,8 +269,8 @@ class LoadTestRunScenario(ScenarioTest):
         assert not server_metrics.get("metrics", {}).get(
             self.kwargs["server_metric_id"]
         )
-    
-        #9. Remove AC & list AC
+
+        # 9. Remove AC & list AC
         self.cmd(
             "az load test-run app-component remove "
             "--test-run-id {test_run_id} "
@@ -284,12 +291,14 @@ class LoadTestRunScenario(ScenarioTest):
             self.kwargs["app_component_id"]
         )
 
-        #10. Create a testrun using existing test run update env to long running
+        # 10. Create a test run using existing test run update env to long running
         self.kwargs.update(
             {
                 "test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID_LONG,
                 "existing_test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID,
-                "enviroment_variables": LoadTestRunConstants.ENV_VAR_DURATION_NAME +"="+ LoadTestRunConstants.ENV_VAR_DURATION_LONG,
+                "environment_variables": LoadTestRunConstants.ENV_VAR_DURATION_NAME
+                + "="
+                + LoadTestRunConstants.ENV_VAR_DURATION_LONG,
             }
         )
         self.cmd(
@@ -299,7 +308,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--test-id {test_id} "
             "--test-run-id {test_run_id} "
             "--existing-test-run-id {existing_test_run_id} "
-            "--env {enviroment_variables} "
+            "--env {environment_variables} "
             "--no-wait "
         )
         self.cmd(
@@ -307,11 +316,17 @@ class LoadTestRunScenario(ScenarioTest):
             "--load-test-resource {load_test_resource} "
             "--resource-group {resource_group} "
             "--test-run-id {test_run_id}",
-            checks=[JMESPathCheck("testRunId", self.kwargs["test_run_id"]), JMESPathCheck("environmentVariables.duration_in_sec", LoadTestRunConstants.ENV_VAR_DURATION_LONG)],
+            checks=[
+                JMESPathCheck("testRunId", self.kwargs["test_run_id"]),
+                JMESPathCheck(
+                    "environmentVariables.duration_in_sec",
+                    LoadTestRunConstants.ENV_VAR_DURATION_LONG,
+                ),
+            ],
         )
-        #waiting for test to start
+        # waiting for test to start
         if self.is_live:
-            time.sleep(10)
+            time.sleep(40)
 
         test_run = self.cmd(
             "az load test-run stop "
@@ -333,8 +348,9 @@ class LoadTestRunScenario(ScenarioTest):
 
         assert test_run.get("status") in ["CANCELLING", "FAILED", "CANCELLED"]
 
-        #11. Add Metrics command group test cases
-    """    self.kwargs.update(
+        # 11. Add Metrics command group test cases
+
+        self.kwargs.update(
             {
                 "test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID_LONG2,
                 "metric_name": LoadTestRunConstants.METRIC_NAME,
@@ -344,9 +360,12 @@ class LoadTestRunScenario(ScenarioTest):
                 "metric_filters_all": LoadTestRunConstants.METRIC_FILTERS_ALL,
                 "metric_filters_dimension_all": LoadTestRunConstants.METRIC_FILTERS_VALUE_ALL,
                 "metric_filters_dimension_specific": LoadTestRunConstants.METRIC_FILTERS_VALUE_SPECIFIC,
+                "metric_interval": LoadTestRunConstants.METRIC_INTERVAL,
             }
         )
-        create_test_run(self)
+
+        create_test_run(self, env=True)
+
         # Verify metrics for the test run with no additional parameters
         metrics_no_additional_parameters = self.cmd(
             "az load test-run metrics list "
@@ -354,6 +373,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--load-test-resource {load_test_resource} "
             "--resource-group {resource_group} "
             "--metric-namespace {metric_namespace} ",
+            "--interval {metric_interval} "
         ).get_output_in_json()
 
         assert len(metrics_no_additional_parameters) > 0
@@ -367,6 +387,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--resource-group {resource_group} "
             "--metric-namespace {metric_namespace} "
             "--metric-name {metric_name} ",
+            "--interval {metric_interval} "
         ).get_output_in_json()
 
         assert len(metrics_with_name) > 0
@@ -382,6 +403,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--metric-namespace {metric_namespace} "
             "--metric-name {metric_name} "
             "--dimension-filters {metric_filters_all} ",
+            "--interval {metric_interval} "
         ).get_output_in_json()
 
         assert len(metrics_with_filters_all) > 0
@@ -406,6 +428,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--metric-namespace {metric_namespace} "
             "--metric-name {metric_name} "
             "--dimension-filters {metric_filters_dimension_all} ",
+            "--interval {metric_interval} "
         ).get_output_in_json()
 
         assert len(metrics_with_filters_dimension_all) > 0
@@ -430,6 +453,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--metric-namespace {metric_namespace} "
             "--metric-name {metric_name} "
             '--dimension-filters "{metric_filters_dimension_specific}" ',
+            "--interval {metric_interval} "
         ).get_output_in_json()
 
         assert len(metrics_with_filters_dimension_specific) > 0
@@ -444,11 +468,11 @@ class LoadTestRunScenario(ScenarioTest):
         assert self.kwargs["metric_dimension_value"] in [
             dimension["value"] for dimension in dimensions_list
         ]
-    """
+
     @ResourceGroupPreparer(**rg_params)
     @LoadTestResourcePreparer(**load_params)
-    def test_load_test_run_invalid(self,rg, load):
-        #1. Create a test run with already existing test run id
+    def test_load_test_run_invalid(self, rg, load):
+        # 1. Create a test run with already existing test run id
         self.kwargs.update(
             {
                 "test_id": LoadTestRunConstants.VALID_TEST_ID,
@@ -459,9 +483,11 @@ class LoadTestRunScenario(ScenarioTest):
                 "display_name": LoadTestRunConstants.DISPLAY_NAME,
             }
         )
-        checks=[JMESPathCheck("testRunId", self.kwargs["test_run_id"]),
-                JMESPathCheck("description", self.kwargs["description"]),
-                JMESPathCheck("displayName", self.kwargs["display_name"])]
+        checks = [
+            JMESPathCheck("testRunId", self.kwargs["test_run_id"]),
+            JMESPathCheck("description", self.kwargs["description"]),
+            JMESPathCheck("displayName", self.kwargs["display_name"]),
+        ]
         create_test(self)
         self.cmd(
             "az load test-run create "
@@ -471,7 +497,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--test-run-id {test_run_id} "
             "--description {description} "
             "--display-name {display_name} ",
-            checks=checks
+            checks=checks,
         )
 
         try:
@@ -486,11 +512,12 @@ class LoadTestRunScenario(ScenarioTest):
         except Exception as e:
             assert "Test run with given test run ID : " in str(e)
             assert "already exist" in str(e)
-        
-        #2. Update a non existing test run
+
+        # 2. Update a non existing test run
         self.kwargs.update(
             {
-                "invalid_test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID+"invalid",
+                "invalid_test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID
+                + "invalid",
                 "description": LoadTestRunConstants.DESCRIPTION,
             }
         )
@@ -506,7 +533,7 @@ class LoadTestRunScenario(ScenarioTest):
             assert "Test run with given test run ID : " in str(e)
             assert "does not exist" in str(e)
 
-        #3. Create a test run with invalid test run id
+        # 3. Create a test run with invalid test run id
         self.kwargs.update(
             {
                 "invalid_test_run_id": LoadTestRunConstants.INVALID_TEST_RUN_ID,
@@ -523,7 +550,7 @@ class LoadTestRunScenario(ScenarioTest):
         except Exception as e:
             assert "Invalid test-run-id value" in str(e)
 
-        #4. Create a test run with invalid App Component Id
+        # 4. Create a test run with invalid App Component Id
         self.kwargs.update(
             {
                 "invalid_app_component_id": LoadTestRunConstants.INVALID_APP_COMPONENT_ID,
@@ -543,8 +570,8 @@ class LoadTestRunScenario(ScenarioTest):
             )
         except Exception as e:
             assert "app-component-id is not a valid Azure Resource ID:" in str(e)
-        
-        #5 AppComponent type and ID mismatch
+
+        # 5 AppComponent type and ID mismatch
         self.kwargs.update(
             {
                 "app_component_id": LoadTestRunConstants.APP_COMPONENT_ID,
@@ -563,9 +590,11 @@ class LoadTestRunScenario(ScenarioTest):
                 '--app-component-id "{app_component_id}" ',
             )
         except Exception as e:
-            assert "Type of app-component-id and app-component-type mismatch: " in str(e)
+            assert "Type of app-component-id and app-component-type mismatch: " in str(
+                e
+            )
 
-        #6 Invalid server metrics
+        # 6 Invalid server metrics
         self.kwargs.update(
             {
                 "invalid_server_metric_id": LoadTestRunConstants.INVALID_SERVER_METRIC_ID,
@@ -588,4 +617,4 @@ class LoadTestRunScenario(ScenarioTest):
                 '--app-component-id "{app_component_id}" ',
             )
         except Exception as e:
-            assert "Key \'invalid_server_metric_name\' not found in kwargs." in str(e)
+            assert "Key 'invalid_server_metric_name' not found in kwargs." in str(e)

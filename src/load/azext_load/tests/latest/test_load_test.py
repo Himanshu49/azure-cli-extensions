@@ -50,6 +50,7 @@ sa_params = {
     "length": 20,
 }
 
+
 class LoadTestScenario(ScenarioTest):
     def __init__(self, *args, **kwargs):
         super(LoadTestScenario, self).__init__(*args, **kwargs)
@@ -60,17 +61,21 @@ class LoadTestScenario(ScenarioTest):
     @LoadTestResourcePreparer(**load_params)
     @StorageAccountPreparer(**sa_params)
     def test_load_test_valid(self, rg, load, vnet):
-        #GET STORAGE ACCOUNT ID
-        result= self.cmd("az storage account show --name {storage_account} --resource-group {resource_group}").get_output_in_json()
+        # GET STORAGE ACCOUNT ID
+        result = self.cmd(
+            "az storage account show --name {storage_account} --resource-group {resource_group}"
+        ).get_output_in_json()
         storage_account_id = result["id"]
         storage_account_name = result["name"]
         storage_account_type = result["type"]
         storage_account_kind = result["kind"]
-        #GET SUBNET ID
-        result= self.cmd("az network vnet subnet list --resource-group {resource_group} --vnet-name {virtual_network}").get_output_in_json()
+        # GET SUBNET ID
+        result = self.cmd(
+            "az network vnet subnet list --resource-group {resource_group} --vnet-name {virtual_network}"
+        ).get_output_in_json()
         subnet_id = result[0]["id"]
 
-        #keyvault_id = self.cmd("az keyvault show --name {key_vault} --resource-group {resource_group}").get_output_in_json()["id"]
+        # keyvault_id = self.cmd("az keyvault show --name {key_vault} --resource-group {resource_group}").get_output_in_json()["id"]
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.VALID_TEST_ID,
@@ -82,19 +87,25 @@ class LoadTestScenario(ScenarioTest):
                 "engine_instance": LoadTestConstants.ENGINE_INSTANCE,
                 "keyvault_reference_id": LoadTestConstants.KEYVAULT_REFERENCE_ID,
                 "split_csv": "yes",
-                "subnet_id": subnet_id
+                "subnet_id": subnet_id,
             }
         )
-        
-        checks=[JMESPathCheck("testId", self.kwargs["test_id"]),
-                JMESPathCheck("loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]),
-                JMESPathCheck("description", self.kwargs["description"]),
-                JMESPathCheck("displayName", self.kwargs["display_name"]),
-                JMESPathCheck("keyvaultReferenceIdentityId", self.kwargs["keyvault_reference_id"]),
-                JMESPathCheck("subnetId", self.kwargs["subnet_id"]),
-                JMESPathCheck("loadTestConfiguration.splitAllCSVs", True),
-                JMESPathCheck("environmentVariables.rps", '10')]
-        #Create load test with all parameters
+
+        checks = [
+            JMESPathCheck("testId", self.kwargs["test_id"]),
+            JMESPathCheck(
+                "loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]
+            ),
+            JMESPathCheck("description", self.kwargs["description"]),
+            JMESPathCheck("displayName", self.kwargs["display_name"]),
+            JMESPathCheck(
+                "keyvaultReferenceIdentityId", self.kwargs["keyvault_reference_id"]
+            ),
+            JMESPathCheck("subnetId", self.kwargs["subnet_id"]),
+            JMESPathCheck("loadTestConfiguration.splitAllCSVs", True),
+            JMESPathCheck("environmentVariables.rps", "10"),
+        ]
+        # Create load test with all parameters
         response = self.cmd(
             "az load test create "
             "--test-id {test_id} "
@@ -113,20 +124,34 @@ class LoadTestScenario(ScenarioTest):
             checks=checks,
         ).get_output_in_json()
 
-        assert self.kwargs["certificate"] == response.get("certificate").get("name") + "=" +response.get("certificate").get("value")
-        assert self.kwargs["secret"] == LoadTestConstants.SECRET_NAME1+"="+response.get("secrets").get(LoadTestConstants.SECRET_NAME1).get("value") + " " + LoadTestConstants.SECRET_NAME2+"="+response.get("secrets").get(LoadTestConstants.SECRET_NAME2).get("value")
-
-        #2 UPDATE THIS TO REM SPLIT CSV
-        self.kwargs.update(
-            {
-                "engine_instance": 11,
-                "keyvault_reference_id": "null",
-                "split_csv": "NO"
-            }
+        assert self.kwargs["certificate"] == response.get("certificate").get(
+            "name"
+        ) + "=" + response.get("certificate").get("value")
+        assert self.kwargs[
+            "secret"
+        ] == LoadTestConstants.SECRET_NAME1 + "=" + response.get("secrets").get(
+            LoadTestConstants.SECRET_NAME1
+        ).get(
+            "value"
+        ) + " " + LoadTestConstants.SECRET_NAME2 + "=" + response.get(
+            "secrets"
+        ).get(
+            LoadTestConstants.SECRET_NAME2
+        ).get(
+            "value"
         )
-        checks=[JMESPathCheck("loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]),
-                JMESPathCheck("keyvaultReferenceIdentityType", "SystemAssigned"),
-                JMESPathCheck("loadTestConfiguration.splitAllCSVs", False)]
+
+        # 2 UPDATE THIS TO REM SPLIT CSV
+        self.kwargs.update(
+            {"engine_instance": 11, "keyvault_reference_id": "null", "split_csv": "NO"}
+        )
+        checks = [
+            JMESPathCheck(
+                "loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]
+            ),
+            JMESPathCheck("keyvaultReferenceIdentityType", "SystemAssigned"),
+            JMESPathCheck("loadTestConfiguration.splitAllCSVs", False),
+        ]
         response = self.cmd(
             "az load test update "
             "--test-id {test_id} "
@@ -137,8 +162,8 @@ class LoadTestScenario(ScenarioTest):
             "--split-csv {split_csv} ",
             checks=checks,
         ).get_output_in_json()
-        
-        #3 SHOW TEST TO CHECK IF KEYVAULTREFERENCEIDENTITYTYPE AND SPLIT CSV IS REMOVED
+
+        # 3 SHOW TEST TO CHECK IF KEYVAULTREFERENCEIDENTITYTYPE AND SPLIT CSV IS REMOVED
         response = self.cmd(
             "az load test show "
             "--test-id {test_id} "
@@ -150,7 +175,7 @@ class LoadTestScenario(ScenarioTest):
         assert not response.get("loadTestConfiguration").get("splitAllCSVs")
         assert "SystemAssigned" == response.get("keyvaultReferenceIdentityType")
 
-        #4 DOWNLOAD ALL FILES
+        # 4 DOWNLOAD ALL FILES
         with tempfile.TemporaryDirectory(
             prefix="clitest-load-", suffix=create_random_name(prefix="", length=5)
         ) as temp_dir:
@@ -178,15 +203,15 @@ class LoadTestScenario(ScenarioTest):
             ]
             for file in files:
                 assert file["fileName"] in files_in_dir
-        
-        #5 DELETE A FILE
+
+        # 5 DELETE A FILE
         self.kwargs.update(
             {
                 "path": temp_dir,
                 "file_name": LoadTestConstants.FILE_NAME,
                 "test_plan": LoadTestConstants.TEST_PLAN,
             }
-        )       
+        )
         self.cmd(
             "az load test file delete "
             "--test-id {test_id} "
@@ -205,7 +230,7 @@ class LoadTestScenario(ScenarioTest):
 
         assert self.kwargs["file_name"] not in [file["fileName"] for file in files]
 
-        #6 UPLOAD A FILE
+        # 6 UPLOAD A FILE
         self.cmd(
             "az load test file upload "
             "--test-id {test_id} "
@@ -214,7 +239,7 @@ class LoadTestScenario(ScenarioTest):
             '--path "{test_plan}" '
         )
 
-        #7 LIST FILES AND CHECK
+        # 7 LIST FILES AND CHECK
         files = self.cmd(
             "az load test file list "
             "--test-id {test_id} "
@@ -224,7 +249,7 @@ class LoadTestScenario(ScenarioTest):
 
         assert self.kwargs["file_name"] in [file["fileName"] for file in files]
 
-        #8 DOWNLOAD A FILE
+        # 8 DOWNLOAD A FILE
         with tempfile.TemporaryDirectory(
             prefix="clitest-load-", suffix=create_random_name(prefix="", length=5)
         ) as temp_dir:
@@ -240,8 +265,8 @@ class LoadTestScenario(ScenarioTest):
             )
 
             assert os.path.exists(os.path.join(temp_dir, self.kwargs["file_name"]))
-        
-        #9 APP COMPONENT ADD AND LIST IT TO CHECK
+
+        # 9 APP COMPONENT ADD AND LIST IT TO CHECK
         self.kwargs.update(
             {
                 "app_component_id": storage_account_id,
@@ -277,10 +302,12 @@ class LoadTestScenario(ScenarioTest):
             "app_component_id"
         ] == app_component.get("resourceId")
 
-        #10 SERVER METRIC ADD AND LIST IT TO CHECK
+        # 10 SERVER METRIC ADD AND LIST IT TO CHECK
         self.kwargs.update(
             {
-                "server_metric_id": LoadTestConstants.SERVER_METRIC_ID.format(storage_account_id),
+                "server_metric_id": LoadTestConstants.SERVER_METRIC_ID.format(
+                    storage_account_id
+                ),
                 "server_metric_name": LoadTestConstants.SERVER_METRIC_NAME,
                 "server_metric_namespace": LoadTestConstants.SERVER_METRIC_NAMESPACE,
                 "aggregation": LoadTestConstants.AGGREGATION,
@@ -309,11 +336,11 @@ class LoadTestScenario(ScenarioTest):
         server_metric = server_metrics.get("metrics", {}).get(
             self.kwargs["server_metric_id"]
         )
-        #11 REMOVE SERVER METRIC AND LIST IT TO CHECK
+        # 11 REMOVE SERVER METRIC AND LIST IT TO CHECK
         assert server_metric is not None
-        #assert self.kwargs[
+        # assert self.kwargs[
         #    "server_metric_id"
-        #] == server_metric.get("id")
+        # ] == server_metric.get("id")
 
         self.cmd(
             "az load test server-metric remove "
@@ -335,7 +362,7 @@ class LoadTestScenario(ScenarioTest):
             self.kwargs["server_metric_id"]
         )
 
-        #12 REMOVE APP COMPONENT AND LIST IT TO CHECK
+        # 12 REMOVE APP COMPONENT AND LIST IT TO CHECK
         self.cmd(
             "az load test app-component remove "
             "--test-id {test_id} "
@@ -355,7 +382,7 @@ class LoadTestScenario(ScenarioTest):
         assert not app_components.get("components", {}).get(
             self.kwargs["app_component_id"]
         )
-        #13 DELETE TEST
+        # 13 DELETE TEST
         self.cmd(
             "az load test delete "
             "--test-id {test_id} "
@@ -363,7 +390,7 @@ class LoadTestScenario(ScenarioTest):
             "--resource-group {resource_group} "
             "--yes"
         )
-        #14 LIST TESTS TO CHECK IF TEST IS DELETED
+        # 14 LIST TESTS TO CHECK IF TEST IS DELETED
         tests = self.cmd(
             "az load test list "
             "--load-test-resource {load_test_resource} "
@@ -372,20 +399,21 @@ class LoadTestScenario(ScenarioTest):
 
         assert self.kwargs["test_id"] not in [test.get("testId") for test in tests]
 
-
     @ResourceGroupPreparer(**rg_params)
     @LoadTestResourcePreparer(**load_params)
     def test_load_test_invalid(self, rg, load):
-        #1. Create a test with already existing test id
+        # 1. Create a test with already existing test id
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.INVALID_TEST_ID,
                 "load_test_config_file": LoadTestConstants.LOAD_TEST_CONFIG_FILE,
             }
         )
-        checks=[JMESPathCheck("testId", self.kwargs["test_id"]),
-                    JMESPathCheck("loadTestConfiguration.engineInstances", 1),
-                    JMESPathCheck("environmentVariables.rps", '10')]
+        checks = [
+            JMESPathCheck("testId", self.kwargs["test_id"]),
+            JMESPathCheck("loadTestConfiguration.engineInstances", 1),
+            JMESPathCheck("environmentVariables.rps", "10"),
+        ]
         create_test(self)
         try:
             self.cmd(
@@ -397,7 +425,7 @@ class LoadTestScenario(ScenarioTest):
         except Exception as e:
             assert "Test with given test ID " in str(e)
 
-        #2. Provide invalid path for load test config file
+        # 2. Provide invalid path for load test config file
         try:
             self.cmd(
                 "az load test create "
@@ -410,7 +438,7 @@ class LoadTestScenario(ScenarioTest):
             assert "Provided path" in str(e)
         delete_test(self)
 
-        #3. Update a test which doesnt exist
+        # 3. Update a test which doesnt exist
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.INVALID_UPDATE_TEST_ID,
@@ -425,10 +453,14 @@ class LoadTestScenario(ScenarioTest):
                 "--engine-instances 11 ",
             )
         except Exception as e:
-            msg = "Test with given test ID : "+LoadTestConstants.INVALID_UPDATE_TEST_ID+" does not exist"
+            msg = (
+                "Test with given test ID : "
+                + LoadTestConstants.INVALID_UPDATE_TEST_ID
+                + " does not exist"
+            )
             assert "Test with given test ID " in str(e)
-        
-        #4. INVALID PATH IN DOWNLOAD TEST CASE
+
+        # 4. INVALID PATH IN DOWNLOAD TEST CASE
         self.kwargs.update(
             {
                 "path": r"\INVALID_PATH",
@@ -452,8 +484,8 @@ class LoadTestScenario(ScenarioTest):
                 "env": LoadTestConstants.INVALID_ENV,
             }
         )
-        
-        #5 Multiple certificate check
+
+        # 5 Multiple certificate check
         try:
             self.cmd(
                 "az load test create "
@@ -465,7 +497,7 @@ class LoadTestScenario(ScenarioTest):
         except Exception as e:
             assert "Invalid Azure Key Vault Certificate URL:" in str(e)
 
-        #6 Invalid secret check
+        # 6 Invalid secret check
         try:
             self.cmd(
                 "az load test create "
@@ -477,7 +509,7 @@ class LoadTestScenario(ScenarioTest):
         except Exception as e:
             assert "Invalid Azure Key Vault Secret URL:" in str(e)
 
-        #7 Invalid env check
+        # 7 Invalid env check
         try:
             self.cmd(
                 "az load test create "
@@ -489,7 +521,7 @@ class LoadTestScenario(ScenarioTest):
         except Exception as e:
             assert "Invalid env argument" in str(e)
 
-        #8 Invalid subnet id check
+        # 8 Invalid subnet id check
         self.kwargs.update(
             {
                 "subnet_id": LoadTestConstants.INVALID_SUBNET_ID,
@@ -506,12 +538,8 @@ class LoadTestScenario(ScenarioTest):
         except Exception as e:
             assert "not a valid Azure subnet resource ID" in str(e)
 
-        #9 Invalid test plan file
-        self.kwargs.update(
-            {
-                "test_plan": LoadTestConstants.ADDITIONAL_FILE
-            }
-        )
+        # 9 Invalid test plan file
+        self.kwargs.update({"test_plan": LoadTestConstants.ADDITIONAL_FILE})
         try:
             self.cmd(
                 "az load test create "
@@ -522,13 +550,9 @@ class LoadTestScenario(ScenarioTest):
             )
         except Exception as e:
             assert "Invalid test plan file extension:" in str(e)
-        
-        #10 Invalid split csv
-        self.kwargs.update(
-            {
-                "split_csv": "Random Text"
-            }
-        )
+
+        # 10 Invalid split csv
+        self.kwargs.update({"split_csv": "Random Text"})
         try:
             self.cmd(
                 "az load test create "

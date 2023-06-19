@@ -32,7 +32,7 @@ class LoadConstants:
     INVALID_SUBNET_ID = r"/subscriptions/invalid/resource/id"
     KEYVAULT_REFERENCE_ID = r"/subscriptions/{subscription_id}/resourceGroups/sample-rg/providers/Microsoft.KeyVault/vaults/sample-kv"
     # App Component constants
-    APP_COMPONENT_ID = r"/subscriptions/sapmle-subscription/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachineScaleSets/sample-vmss"
+    APP_COMPONENT_ID = r"/subscriptions/sample-subscription/resourceGroups/sample-rg/providers/Microsoft.Compute/virtualMachineScaleSets/sample-vmss"
     APP_COMPONENT_TYPE = r"Microsoft.Compute/virtualMachineScaleSets"
     APP_COMPONENT_NAME = r"temp-vmss"
 
@@ -49,7 +49,6 @@ class LoadConstants:
     INVALID_SERVER_METRIC_ID = r"/subscriptions/invalid/resource/id"
 
 
-
 class LoadTestConstants(LoadConstants):
     # Test IDs for load test commands
     VALID_TEST_ID = "valid-test-case_testid"
@@ -63,6 +62,7 @@ class LoadTestRunConstants(LoadConstants):
     # Metric constants
     METRIC_NAME = "VirtualUsers"
     METRIC_NAMESPACE = "LoadTestRunMetrics"
+    METRIC_INTERVAL = "PT5S"
     METRIC_DIMENSION_NAME = "RequestName"
     METRIC_DIMENSION_VALUE = "HTTP Request"
     METRIC_FILTERS_ALL = "*"
@@ -78,4 +78,3 @@ class LoadTestRunConstants(LoadConstants):
     VALID_TEST_RUN_ID_LONG = "valid-testrun-case-long-testrunid"
     VALID_TEST_RUN_ID_LONG2 = "valid-testrun-case-long-testrunid2"
     INVALID_TEST_RUN_ID = r"A$%invalid-testrun-case-testrunid"
-    
