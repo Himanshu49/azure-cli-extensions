@@ -15,10 +15,11 @@ class LoadConstants:
     TEST_PLAN = os.path.join(TEST_RESOURCES_DIR, r"sample-JMX-file.jmx")
     ADDITIONAL_FILE = os.path.join(TEST_RESOURCES_DIR, r"additional-data.csv")
     FILE_NAME = "sample-JMX-file.jmx"
+    FILE_TYPE ="JMX_FILE"
 
     ENV_VAR_DURATION_NAME = "duration_in_sec"
     ENV_VAR_DURATION_SHORT = "1"
-    ENV_VAR_DURATION_LONG = "120"
+    ENV_VAR_DURATION_LONG = "180"
 
     SECRETS = r"secret_name1=https://sample-kv.vault.azure.net/secrets/secret-name1/8022ff4b79f04a4ca6c3ca8e3820e757 secret_name2=https://sample-kv.vault.azure.net/secrets/secret-name2/8022ff4b79f04a4ca6c3ca8e3820e757"
     SECRET_NAME1 = "secret_name1"
@@ -27,7 +28,11 @@ class LoadConstants:
     MULTIPLE_CERTIFICATE = r"cert1=https://sample-kv.vault.azure.net/certificates/cert-name1/0e35fd2807ce44368cf54274dd6f35cc cert2=https://sample-kv.vault.azure.net/certificates/cert-name2/0e35fd2807ce44368cf54274dd6f35cc"
     INVALID_SECRET = r"secret_name1=secret.url/secrets secret_name2=https://sample-kv.vault.azure.net/secrets/secret-name2/8022ff4b79f04a4ca6c3ca8e3820e757 secret_name3=https://sample-kv.vault.azure.net/secrets/secret-name3/8022ff4b79f04a4ca6c3ca8e3820e757"
     INVALID_ENV = "a"
+    VALID_ENV_RPS = "rps=10"
     ENGINE_INSTANCE = 1
+
+    SPLIT_CSV_TRUE = "true"
+    SPLIT_CSV_FALSE = "false"
 
     INVALID_SUBNET_ID = r"/subscriptions/invalid/resource/id"
     KEYVAULT_REFERENCE_ID = r"/subscriptions/{subscription_id}/resourceGroups/sample-rg/providers/Microsoft.KeyVault/vaults/sample-kv"

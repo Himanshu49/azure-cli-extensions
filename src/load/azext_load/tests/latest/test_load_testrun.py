@@ -188,7 +188,8 @@ class LoadTestRunScenario(ScenarioTest):
             "--resource-group {resource_group} "
             '--app-component-name "{app_component_name}" '
             '--app-component-type "{app_component_type}" '
-            '--app-component-id "{app_component_id}" ',
+            '--app-component-id "{app_component_id}" '
+            '--app-component-kind "{app_component_kind}" ',
         ).get_output_in_json()
 
         app_components = self.cmd(
@@ -289,7 +290,7 @@ class LoadTestRunScenario(ScenarioTest):
             {
                 "test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID_LONG,
                 "existing_test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID,
-                "enviroment_variables": LoadTestRunConstants.ENV_VAR_DURATION_NAME +"="+ LoadTestRunConstants.ENV_VAR_DURATION_LONG,
+                "environment_variables": LoadTestRunConstants.ENV_VAR_DURATION_NAME +"="+ LoadTestRunConstants.ENV_VAR_DURATION_LONG,
             }
         )
         self.cmd(
@@ -299,7 +300,7 @@ class LoadTestRunScenario(ScenarioTest):
             "--test-id {test_id} "
             "--test-run-id {test_run_id} "
             "--existing-test-run-id {existing_test_run_id} "
-            "--env {enviroment_variables} "
+            "--env {environment_variables} "
             "--no-wait "
         )
         self.cmd(
@@ -334,7 +335,7 @@ class LoadTestRunScenario(ScenarioTest):
         assert test_run.get("status") in ["CANCELLING", "FAILED", "CANCELLED"]
 
         #11. Add Metrics command group test cases
-    """    self.kwargs.update(
+        self.kwargs.update(
             {
                 "test_run_id": LoadTestRunConstants.VALID_TEST_RUN_ID_LONG2,
                 "metric_name": LoadTestRunConstants.METRIC_NAME,
@@ -444,7 +445,7 @@ class LoadTestRunScenario(ScenarioTest):
         assert self.kwargs["metric_dimension_value"] in [
             dimension["value"] for dimension in dimensions_list
         ]
-    """
+
     @ResourceGroupPreparer(**rg_params)
     @LoadTestResourcePreparer(**load_params)
     def test_load_test_run_invalid(self,rg, load):

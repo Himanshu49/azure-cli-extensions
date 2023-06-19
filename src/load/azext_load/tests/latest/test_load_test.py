@@ -70,7 +70,6 @@ class LoadTestScenario(ScenarioTest):
         result= self.cmd("az network vnet subnet list --resource-group {resource_group} --vnet-name {virtual_network}").get_output_in_json()
         subnet_id = result[0]["id"]
 
-        #keyvault_id = self.cmd("az keyvault show --name {key_vault} --resource-group {resource_group}").get_output_in_json()["id"]
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.VALID_TEST_ID,
@@ -81,7 +80,8 @@ class LoadTestScenario(ScenarioTest):
                 "display_name": LoadTestConstants.DISPLAY_NAME,
                 "engine_instance": LoadTestConstants.ENGINE_INSTANCE,
                 "keyvault_reference_id": LoadTestConstants.KEYVAULT_REFERENCE_ID,
-                "split_csv": "yes",
+                "env": LoadTestConstants.VALID_ENV_RPS,
+                "split_csv": LoadTestConstants.SPLIT_CSV_TRUE,
                 "subnet_id": subnet_id
             }
         )
@@ -101,7 +101,7 @@ class LoadTestScenario(ScenarioTest):
             "--load-test-resource {load_test_resource} "
             "--resource-group {resource_group} "
             '--load-test-config-file "{load_test_config_file}" '
-            "--env rps=10 "
+            "--env {env} "
             "--description {description} "
             "--display-name {display_name} "
             "--engine-instance {engine_instance} "
@@ -116,12 +116,12 @@ class LoadTestScenario(ScenarioTest):
         assert self.kwargs["certificate"] == response.get("certificate").get("name") + "=" +response.get("certificate").get("value")
         assert self.kwargs["secret"] == LoadTestConstants.SECRET_NAME1+"="+response.get("secrets").get(LoadTestConstants.SECRET_NAME1).get("value") + " " + LoadTestConstants.SECRET_NAME2+"="+response.get("secrets").get(LoadTestConstants.SECRET_NAME2).get("value")
 
-        #2 UPDATE THIS TO REM SPLIT CSV
+        #2 a) UPDATE THIS TO REM SPLIT CSV
         self.kwargs.update(
             {
                 "engine_instance": 11,
                 "keyvault_reference_id": "null",
-                "split_csv": "NO"
+                "split_csv": LoadTestConstants.SPLIT_CSV_FALSE
             }
         )
         checks=[JMESPathCheck("loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]),
@@ -138,6 +138,28 @@ class LoadTestScenario(ScenarioTest):
             checks=checks,
         ).get_output_in_json()
         
+        #2 b) UPDATE TEST WITH ALL PARAMETERS
+        checks=[JMESPathCheck("loadTestConfiguration.engineInstances", self.kwargs["engine_instance"]),
+                JMESPathCheck("keyvaultReferenceIdentityType", "SystemAssigned"),
+                JMESPathCheck("loadTestConfiguration.splitAllCSVs", False)]
+        response = self.cmd(
+            "az load test update "
+            "--test-id {test_id} "
+            "--load-test-resource {load_test_resource} "
+            "--resource-group {resource_group} "
+            "--engine-instance {engine_instance} "
+            "--keyvault-reference-id {keyvault_reference_id} "
+            "--split-csv {split_csv} "
+            '--load-test-config-file "{load_test_config_file}" '
+            "--env {env} "
+            "--description {description} "
+            "--display-name {display_name} "
+            "--certificate {certificate} "
+            "--secret {secret} "
+            "--subnet-id {subnet_id} ",
+            checks=checks,
+        ).get_output_in_json()
+
         #3 SHOW TEST TO CHECK IF KEYVAULTREFERENCEIDENTITYTYPE AND SPLIT CSV IS REMOVED
         response = self.cmd(
             "az load test show "
@@ -161,7 +183,8 @@ class LoadTestScenario(ScenarioTest):
                 "--test-id {test_id} "
                 "--load-test-resource {load_test_resource} "
                 "--resource-group {resource_group} "
-                '--path "{path}"'
+                '--path "{path}" '
+                "--force"
             )
 
             files = self.cmd(
@@ -185,6 +208,7 @@ class LoadTestScenario(ScenarioTest):
                 "path": temp_dir,
                 "file_name": LoadTestConstants.FILE_NAME,
                 "test_plan": LoadTestConstants.TEST_PLAN,
+                "file_type": LoadTestConstants.FILE_TYPE,
             }
         )       
         self.cmd(
@@ -212,6 +236,8 @@ class LoadTestScenario(ScenarioTest):
             "--load-test-resource {load_test_resource} "
             "--resource-group {resource_group} "
             '--path "{test_plan}" '
+            "--file-type {file_type} "
+            "--no-wait "
         )
 
         #7 LIST FILES AND CHECK
@@ -237,6 +263,7 @@ class LoadTestScenario(ScenarioTest):
                 "--resource-group {resource_group} "
                 "--file-name {file_name} "
                 '--path "{download_path}" '
+                "--force "
             )
 
             assert os.path.exists(os.path.join(temp_dir, self.kwargs["file_name"]))
