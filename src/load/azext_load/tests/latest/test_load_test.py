@@ -3,9 +3,9 @@
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
-import os
+import os, time, random
 import tempfile
-
+from azure.cli.testsdk.reverse_dependency import get_dummy_cli
 from azext_load.tests.latest.constants import LoadTestConstants
 from azext_load.tests.latest.helper import create_test, delete_test
 from azext_load.tests.latest.preparers import LoadTestResourcePreparer
@@ -32,15 +32,40 @@ load_params = {
     "random_name_length": 30,
 }
 
-
+count = 0
 class LoadTestScenario(ScenarioTest):
     def __init__(self, *args, **kwargs):
         super(LoadTestScenario, self).__init__(*args, **kwargs)
         self.kwargs.update({"subscription_id": self.get_subscription_id()})
+        self.kwargs.update({"resource_group":"hbisht-rg2",
+                            "load_test_resource":"testing-cli-2-l134rwest",})
 
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_create(self, rg, load):
+    @classmethod
+    def setUpClass(cls):
+        time.sleep(random.randint(1,50))
+        template = "az load create --resource-group hbisht-rg2 --name testing-cli-2-l134rwest --location eastus  --subscription 7c71b563-0dc0-4bc0-bcf6-06f8f0516c7a "
+        obj = cls(method_name = "test_load_test_create")
+        res = obj.cmd("az load list --resource-group hbisht-rg2 --subscription 7c71b563-0dc0-4bc0-bcf6-06f8f0516c7a").get_output_in_json()
+        flag = False
+        for test in res:
+            if test.get("name") == "testing-cli-2-l134rwest":
+                flag = True
+        if flag == False:
+            obj.cmd(template)
+
+    @classmethod
+    def tearDownClass(cls):
+        obj = cls(method_name = "test_load_test_create")
+        res = obj.cmd("az load test list --resource-group hbisht-rg2 --name testing-cli-2-l134rwest --subscription 7c71b563-0dc0-4bc0-bcf6-06f8f0516c7a").get_output_in_json()
+        if len(res) >= 10:
+            time.sleep(50)
+            obj.cmd("az load delete --resource-group hbisht-rg2 --name testing-cli-2-l134rwest --subscription 7c71b563-0dc0-4bc0-bcf6-06f8f0516c7a --yes")
+            #assert False
+    
+
+    def test_load_test_create(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.CREATE_TEST_ID,
@@ -67,17 +92,9 @@ class LoadTestScenario(ScenarioTest):
         ).get_output_in_json()
         assert self.kwargs["test_id"] in [test.get("testId") for test in tests]
 
-        self.cmd(
-            "az load test delete "
-            "--test-id {test_id} "
-            "--load-test-resource {load_test_resource} "
-            "--resource-group {resource_group} "
-            "--yes"
-        )
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_list(self, rg, load):
+    def test_load_test_list(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.LIST_TEST_ID,
@@ -97,9 +114,9 @@ class LoadTestScenario(ScenarioTest):
         assert "fake_test_id" not in [test["testId"] for test in tests]
         assert self.kwargs["test_id"] in [test.get("testId") for test in tests]
 
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_show(self, rg, load):
+    def test_load_test_show(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.SHOW_TEST_ID,
@@ -118,9 +135,9 @@ class LoadTestScenario(ScenarioTest):
 
         assert self.kwargs["test_id"] == test.get("testId")
 
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_delete(self, rg, load):
+    def test_load_test_delete(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.DELETE_TEST_ID,
@@ -143,11 +160,12 @@ class LoadTestScenario(ScenarioTest):
             "--resource-group {resource_group}"
         ).get_output_in_json()
 
-        assert self.kwargs["test_id"] not in [test.get("testId") for test in tests]
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
+        assert self.kwargs["test_id"] not in [test.get("testId") for test in tests] 
+        create_test(self)   
+    
     def test_load_test_download_files(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.DOWNLOAD_TEST_ID,
@@ -184,11 +202,11 @@ class LoadTestScenario(ScenarioTest):
                 if os.path.isfile(os.path.join(temp_dir, f))
             ]
             for file in files:
-                assert file["fileName"] in files_in_dir
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_create_with_args(self, rg, load):
+                assert file["fileName"] in files_in_dir    
+    
+    def test_load_test_create_with_args(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.CREATE_WITH_ARGS_TEST_ID,
@@ -230,10 +248,12 @@ class LoadTestScenario(ScenarioTest):
         ).get_output_in_json()
 
         assert self.kwargs["test_id"] in [test.get("testId") for test in tests]
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_update(self, rg, load):
+        count = count - 1
+    
+    
+    def test_load_test_update(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.UPDATE_TEST_ID,
@@ -259,11 +279,11 @@ class LoadTestScenario(ScenarioTest):
             "--resource-group {resource_group}"
         ).get_output_in_json()
 
-        assert self.kwargs["test_id"] in [test.get("testId") for test in tests]
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_app_component(self, rg, load):
+        assert self.kwargs["test_id"] in [test.get("testId") for test in tests]    
+    
+    def test_load_test_app_component(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.APP_COMPONENT_TEST_ID,
@@ -321,10 +341,10 @@ class LoadTestScenario(ScenarioTest):
         assert not app_components.get("components", {}).get(
             self.kwargs["app_component_id"]
         )
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
-    def test_load_test_server_metric(self, rg, load):
+    
+    def test_load_test_server_metric(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.SERVER_METRIC_TEST_ID,
@@ -413,11 +433,11 @@ class LoadTestScenario(ScenarioTest):
 
         assert not server_metrics.get("metrics", {}).get(
             self.kwargs["server_metric_id"]
-        )
-
-    @ResourceGroupPreparer(**rg_params)
-    @LoadTestResourcePreparer(**load_params)
+        )    
+    
     def test_load_test_file(self):
+        global count
+        count = count + 1
         self.kwargs.update(
             {
                 "test_id": LoadTestConstants.FILE_TEST_ID,

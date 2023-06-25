@@ -1,11 +1,14 @@
-# --------------------------------------------------------------------------------------------
+"""# --------------------------------------------------------------------------------------------
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License. See License.txt in the project root for license information.
 # --------------------------------------------------------------------------------------------
 
 import os
 import tempfile
+import threading
 import time
+
+import pytest
 
 from azext_load.tests.latest.constants import LoadTestRunConstants
 from azext_load.tests.latest.helper import (
@@ -37,8 +40,82 @@ load_params = {
     "resource_group_key": "resource_group",
     "random_name_length": 30,
 }
+from knack.log import get_logger
 
+logger = get_logger(__name__)
+count = 0
 
+class DemoScenario(ScenarioTest):
+    def __init__(self, *args, **kwargs):
+        super(DemoScenario, self).__init__(*args, **kwargs)
+        self.kwargs.update({"subscription_id": self.get_subscription_id()})
+
+    @classmethod
+    def setUpClass(self):
+        global count
+        count = count+1
+        logger.warning("setup class")
+
+    @classmethod
+    def tearDownClass(self):
+        assert False
+    
+    @pytest.fixture(autouse=True, scope="class")
+    def setup_class(self):
+        global count 
+        count = 1
+        yield 
+        assert False
+
+    def test_load_test_demo(self):
+        global count
+        time.sleep(10)
+        assert count==1
+
+    def test_load_test_demo2(self):
+        time.sleep(10)
+        assert count==1
+    
+    def test_load_test_demo3(self):
+        global count
+        assert count==1
+
+    def test_load_test_demo4(self):
+        time.sleep(10)
+        assert count==1
+
+    def test_load_test_demo6(self):
+        time.sleep(10)
+        global count
+        assert count==1
+
+    def test_load_test_demo5(self):
+        assert count==1
+
+    def test_load_test_demo7(self):
+        global count
+        assert count==1
+    
+    def test_load_test_demo8(self):
+        time.sleep(10)
+        assert count==1
+    
+    def test_load_test_demo9(self):
+        global count
+        assert count==1
+    
+    def test_load_test_demo10(self):
+        time.sleep(10)
+        assert count==1
+    
+    def test_load_test_demo11(self):
+        global count
+        assert count==1
+    
+    def test_load_test_demo12(self):
+        assert count==1
+    """
+"""
 class LoadTestRunScenario(ScenarioTest):
     def __init__(self, *args, **kwargs):
         super(LoadTestRunScenario, self).__init__(*args, **kwargs)
@@ -521,4 +598,4 @@ class LoadTestRunScenario(ScenarioTest):
         )
         assert self.kwargs["metric_dimension_value"] in [
             dimension["value"] for dimension in dimensions_list
-        ]
+        ]"""
