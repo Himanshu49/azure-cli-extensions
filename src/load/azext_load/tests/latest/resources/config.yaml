@@ -10,6 +10,3 @@ env:
   - name: 'rps'
     value: 1
 splitAllCSVs: True
-autoStop:
-  errorPercentage: 90
-  timeWindow: 60

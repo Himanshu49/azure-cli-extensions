@@ -310,22 +310,22 @@ def convert_yaml_to_test(data):
             except InvalidArgumentValueError as e:
                 logger.error("Invalid failure criteria: %s", str(e))
             new_body["passFailCriteria"]["passFailMetrics"][metric_id] = {}
-            new_body["passFailCriteria"]["passFailMetrics"][metric_id][
-                "aggregate"
-            ] = components.split("(")[0].strip()
+            new_body["passFailCriteria"]["passFailMetrics"][metric_id]["aggregate"] = (
+                components.split("(")[0].strip()
+            )
             new_body["passFailCriteria"]["passFailMetrics"][metric_id][
                 "clientMetric"
             ] = (components.split("(")[1].split(")")[0].strip())
-            new_body["passFailCriteria"]["passFailMetrics"][metric_id][
-                "condition"
-            ] = components.split(")")[1].strip()[0]
-            new_body["passFailCriteria"]["passFailMetrics"][metric_id][
-                "value"
-            ] = components.split(
-                new_body["passFailCriteria"]["passFailMetrics"][metric_id]["condition"]
-            )[
-                1
-            ].strip()
+            new_body["passFailCriteria"]["passFailMetrics"][metric_id]["condition"] = (
+                components.split(")")[1].strip()[0]
+            )
+            new_body["passFailCriteria"]["passFailMetrics"][metric_id]["value"] = (
+                components.split(
+                    new_body["passFailCriteria"]["passFailMetrics"][metric_id][
+                        "condition"
+                    ]
+                )[1].strip()
+            )
             if name is not None:
                 new_body["passFailCriteria"]["passFailMetrics"][metric_id][
                     "requestName"
@@ -431,10 +431,18 @@ def create_or_update_test_with_config(
     new_body["loadTestConfiguration"]["quickStartTest"] = False
 
     new_body["passFailCriteria"] = {}
+    # make every metric in passFailMetrics as None to remove it from the test and append metrics from yaml
     for key in body.get("passFailCriteria", {}):
-        new_body["passFailCriteria"][key] = None
+        new_body["passFailCriteria"]["passFailMetrics"] = {}
+        for key2 in body.get("passFailCriteria", {}).get("passFailMetrics", {}):
+            new_body["passFailCriteria"]["passFailMetrics"][key2] = None
+            logger.debug("------------%s----------", key2)
     if yaml_test_body.get("passFailCriteria") is not None:
-        new_body["passFailCriteria"] = yaml_test_body.get("passFailCriteria", {})
+        new_body["passFailCriteria"]["passFailMetrics"] = yaml_test_body[
+            "passFailCriteria"
+        ].get("passFailMetrics", {}) | new_body["passFailCriteria"].get(
+            "passFailMetrics", {}
+        )
     if split_csv is not None:
         new_body["loadTestConfiguration"]["splitAllCSVs"] = split_csv
     elif (
