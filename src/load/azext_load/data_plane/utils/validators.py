@@ -48,6 +48,14 @@ def validate_test_run_id(namespace):
     if not re.match("^[a-z0-9_-]*$", namespace.test_run_id):
         raise InvalidArgumentValueError("Invalid test-run-id value")
 
+def validate_trigger_id(namespace):
+    """Validates trigger-id"""
+    if not isinstance(namespace.trigger_id, str):
+        raise InvalidArgumentValueError(
+            f"Invalid trigger-id type: {type(namespace.trigger_id)}"
+        )
+    if not re.match("^[a-z0-9_-]*$", namespace.trigger_id):
+        raise InvalidArgumentValueError("Invalid trigger-id value")
 
 def _validate_akv_url(string, url_type="secrets|certificates|keys|storage"):
     """Validates Azure Key Vault URL"""

@@ -48,7 +48,6 @@ force = CLIArgumentType(
     default=False,
     help="Force run the command. This will create the directory to download files if it does not exist.",
 )
-#
 
 test_id = CLIArgumentType(
     validator=validators.validate_test_id,
@@ -414,4 +413,67 @@ response_time_aggregate = CLIArgumentType(
     type=str,
     choices=utils.get_enum_values(models.AllowedTrendsResponseTimeAggregations),
     help="Specify the aggregation method for response time.",
+)
+
+trigger_id = CLIArgumentType(
+    validator=validators.validate_trigger_id,
+    options_list=["--trigger-id"],
+    type=str,
+    help="Trigger ID of the load trigger",
+)
+
+start_date_time = CLIArgumentType(
+    options_list=["--start-date-time"],
+    type=str,
+    help="Start date time of the load trigger schedule",
+)
+
+recurrence_type = CLIArgumentType(
+    options_list=["--recurrence-type"],
+    type=str,
+    choices=utils.get_enum_values(models.RecurrenceTypes),
+    help="Recurrence type of the load trigger schedule",
+)
+
+recurrence_properties = CLIArgumentType(
+    options_list=["--recurrence-properties"],
+    type=str,
+    help="Recurrence properties of the load trigger schedule",
+)
+
+end_after_occurrence = CLIArgumentType(
+    options_list=["--end-after-occurrence"],
+    type=int,
+    help="End after occurrence of the load trigger schedule",
+)
+
+end_after_date_time = CLIArgumentType(
+    options_list=["--end-after-date-time"],
+    type=str,
+    help="End after date time of the load trigger schedule",
+)
+
+test_ids = CLIArgumentType(
+    options_list=["--test-ids"],
+    type=str,
+    help="Test IDs of the load tests to be triggered by schedule.",
+)
+
+state = CLIArgumentType(
+    options_list=["--state"],
+    choices=utils.get_enum_values(models.AllowedTriggerStates),
+    type=str,
+    help="State of the load trigger schedule",
+)
+
+trigger_display_name = CLIArgumentType(
+    options_list=["--display-name"],
+    type=str,
+    help="Display name of the load trigger schedule",
+)
+
+trigger_description = CLIArgumentType(
+    options_list=["--description"],
+    type=str,
+    help="Description of the load trigger schedule",
 )
